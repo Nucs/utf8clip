@@ -1,4 +1,4 @@
-using BlueMarsh.Utf8Clip;
+using Nucs.Utf8Clip;
 
 namespace utf8clip.Tests;
 

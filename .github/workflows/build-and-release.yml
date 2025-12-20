@@ -73,12 +73,28 @@ jobs:
         dotnet-version: '10.0.x'
         dotnet-quality: 'preview'
 
+    - name: Get version info
+      id: version
+      shell: bash
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        else
+          VERSION="0.0.0-dev"
+        fi
+        COMMIT_SHA="${GITHUB_SHA:0:7}"
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_OUTPUT
+        echo "Building version $VERSION+$COMMIT_SHA"
+
     - name: Publish AOT
       run: |
         dotnet publish src/utf8clip.csproj \
           --configuration Release \
           --runtime ${{ matrix.runtime }} \
           -p:PublishAot=true \
+          -p:Version=${{ steps.version.outputs.VERSION }} \
+          -p:SourceRevisionId=${{ steps.version.outputs.COMMIT_SHA }} \
           --output publish
       shell: bash
 
@@ -101,8 +117,24 @@ jobs:
         dotnet-version: '10.0.x'
         dotnet-quality: 'preview'
 
+    - name: Get version info
+      id: version
+      run: |
+        if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        else
+          VERSION="0.0.0-dev"
+        fi
+        COMMIT_SHA="${GITHUB_SHA:0:7}"
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "COMMIT_SHA=$COMMIT_SHA" >> $GITHUB_OUTPUT
+
     - name: Build DLL
-      run: dotnet build src/utf8clip.csproj --configuration Release
+      run: |
+        dotnet build src/utf8clip.csproj \
+          --configuration Release \
+          -p:Version=${{ steps.version.outputs.VERSION }} \
+          -p:SourceRevisionId=${{ steps.version.outputs.COMMIT_SHA }}
 
     - name: Create package
       run: |

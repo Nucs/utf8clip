@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BlueMarsh.Utf8Clip;
+namespace Nucs.Utf8Clip;
 
 /// <summary>
 /// Cross-platform clipboard operations with UTF-8 support.
