@@ -19,14 +19,11 @@ jobs:
           - os: windows-latest
             runtime: win-x64
             artifact: utf8clip-win-x64.exe
-          # Linux (x64 only - ARM64 needs ARM runner)
+          # Linux
           - os: ubuntu-latest
             runtime: linux-x64
             artifact: utf8clip-linux-x64
-          # macOS (ARM64 - macos-latest is ARM, use macos-13 for x64)
-          - os: macos-13
-            runtime: osx-x64
-            artifact: utf8clip-osx-x64
+          # macOS (macos-latest is ARM64)
           - os: macos-latest
             runtime: osx-arm64
             artifact: utf8clip-osx-arm64
@@ -155,7 +152,6 @@ jobs:
           |----------|------|-------------|
           | Windows x64 | `utf8clip-win-x64.exe` | Native AOT binary |
           | Linux x64 | `utf8clip-linux-x64` | Native AOT binary |
-          | macOS x64 | `utf8clip-osx-x64` | Native AOT binary |
           | macOS ARM64 | `utf8clip-osx-arm64` | Native AOT binary |
           | Cross-platform | `utf8clip-dotnet.zip` | Requires .NET 10 runtime |
 
