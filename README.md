@@ -12,9 +12,7 @@ Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
 | Platform | Binary | Size | Runtime Required |
 |----------|--------|------|------------------|
 | Windows x64 | `utf8clip-win-x64.exe` | ~1.6MB | None |
-| Windows ARM64 | `utf8clip-win-arm64.exe` | ~1.6MB | None |
 | Linux x64 | `utf8clip-linux-x64` | ~1.5MB | None (needs xclip/xsel) |
-| Linux ARM64 | `utf8clip-linux-arm64` | ~1.5MB | None (needs xclip/xsel) |
 | macOS x64 | `utf8clip-osx-x64` | ~1.5MB | None |
 | macOS ARM64 | `utf8clip-osx-arm64` | ~1.5MB | None |
 | Cross-platform | `utf8clip-dotnet.zip` | ~12KB | .NET 10 |

@@ -15,22 +15,16 @@ jobs:
     strategy:
       matrix:
         include:
-          # Windows
+          # Windows (x64 only - ARM64 needs ARM runner)
           - os: windows-latest
             runtime: win-x64
             artifact: utf8clip-win-x64.exe
-          - os: windows-latest
-            runtime: win-arm64
-            artifact: utf8clip-win-arm64.exe
-          # Linux
+          # Linux (x64 only - ARM64 needs ARM runner)
           - os: ubuntu-latest
             runtime: linux-x64
             artifact: utf8clip-linux-x64
-          - os: ubuntu-latest
-            runtime: linux-arm64
-            artifact: utf8clip-linux-arm64
-          # macOS
-          - os: macos-latest
+          # macOS (ARM64 - macos-latest is ARM, use macos-13 for x64)
+          - os: macos-13
             runtime: osx-x64
             artifact: utf8clip-osx-x64
           - os: macos-latest
@@ -160,9 +154,7 @@ jobs:
           | Platform | File | Description |
           |----------|------|-------------|
           | Windows x64 | `utf8clip-win-x64.exe` | Native AOT binary |
-          | Windows ARM64 | `utf8clip-win-arm64.exe` | Native AOT binary |
           | Linux x64 | `utf8clip-linux-x64` | Native AOT binary |
-          | Linux ARM64 | `utf8clip-linux-arm64` | Native AOT binary |
           | macOS x64 | `utf8clip-osx-x64` | Native AOT binary |
           | macOS ARM64 | `utf8clip-osx-arm64` | Native AOT binary |
           | Cross-platform | `utf8clip-dotnet.zip` | Requires .NET 10 runtime |
