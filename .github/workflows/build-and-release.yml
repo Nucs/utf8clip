@@ -11,7 +11,41 @@ on:
 permissions: write-all
 
 jobs:
+  test:
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+          - os: ubuntu-latest
+          - os: macos-latest
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        dotnet-quality: 'preview'
+
+    - name: Install xclip (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y xclip xvfb
+
+    - name: Run tests (Linux with virtual display)
+      if: runner.os == 'Linux'
+      run: xvfb-run --auto-servernum dotnet test --configuration Release --verbosity minimal --nologo
+      env:
+        DISPLAY: ':99'
+
+    - name: Run tests (Windows/macOS)
+      if: runner.os != 'Linux'
+      run: dotnet test --configuration Release --verbosity minimal --nologo
+
   build:
+    needs: test
     strategy:
       matrix:
         include:
@@ -56,6 +90,7 @@ jobs:
         retention-days: 5
 
   build-dll:
+    needs: test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
