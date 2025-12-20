@@ -15,18 +15,18 @@ jobs:
     strategy:
       matrix:
         include:
-          # Windows (x64 only - ARM64 needs ARM runner)
           - os: windows-latest
             runtime: win-x64
-            artifact: utf8clip-win-x64.exe
-          # Linux
+            platform: win-x64
+            binary: utf8clip.exe
           - os: ubuntu-latest
             runtime: linux-x64
-            artifact: utf8clip-linux-x64
-          # macOS (macos-latest is ARM64)
+            platform: linux-x64
+            binary: utf8clip
           - os: macos-latest
             runtime: osx-arm64
-            artifact: utf8clip-osx-arm64
+            platform: osx-arm64
+            binary: utf8clip
 
     runs-on: ${{ matrix.os }}
 
@@ -48,20 +48,11 @@ jobs:
           --output publish
       shell: bash
 
-    - name: Rename artifact (Unix)
-      if: runner.os != 'Windows'
-      run: mv publish/utf8clip publish/${{ matrix.artifact }}
-
-    - name: Rename artifact (Windows)
-      if: runner.os == 'Windows'
-      run: mv publish/utf8clip.exe publish/${{ matrix.artifact }}
-      shell: bash
-
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.artifact }}
-        path: publish/${{ matrix.artifact }}
+        name: ${{ matrix.platform }}
+        path: publish/${{ matrix.binary }}
         retention-days: 5
 
   build-dll:
@@ -87,7 +78,7 @@ jobs:
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: utf8clip-dotnet
+        name: dotnet
         path: package/
         retention-days: 5
 
@@ -99,30 +90,51 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Extract version
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
     - name: Download all artifacts
       uses: actions/download-artifact@v4
       with:
         path: artifacts
 
-    - name: Prepare release files
+    - name: Create release zips
       run: |
+        VERSION="${{ steps.version.outputs.VERSION }}"
         mkdir -p release
-        # Move all AOT binaries
-        find artifacts -type f -name "utf8clip-*" -exec mv {} release/ \;
-        # Zip the DLL package
-        cd artifacts/utf8clip-dotnet && zip -r ../../release/utf8clip-dotnet.zip . && cd ../..
-        # List files
+
+        # Windows x64
+        cd artifacts/win-x64
+        zip ../../release/utf8clip-${VERSION}-win-x64.zip utf8clip.exe
+        cd ../..
+
+        # Linux x64
+        cd artifacts/linux-x64
+        chmod +x utf8clip
+        zip ../../release/utf8clip-${VERSION}-linux-x64.zip utf8clip
+        cd ../..
+
+        # macOS ARM64
+        cd artifacts/osx-arm64
+        chmod +x utf8clip
+        zip ../../release/utf8clip-${VERSION}-osx-arm64.zip utf8clip
+        cd ../..
+
+        # .NET DLL package
+        cd artifacts/dotnet
+        zip ../../release/utf8clip-${VERSION}-dotnet.zip *
+        cd ../..
+
         ls -la release/
 
     - name: Generate checksums
       run: |
         cd release
-        sha256sum * > SHA256SUMS.txt
-        cat SHA256SUMS.txt
-
-    - name: Extract version
-      id: version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+        for f in *.zip; do
+          sha256sum "$f" | cut -d' ' -f1 > "${f}.sha256"
+          echo "${f}.sha256: $(cat ${f}.sha256)"
+        done
 
     - name: Check if prerelease
       id: prerelease
@@ -148,23 +160,26 @@ jobs:
 
           ### Downloads
 
-          | Platform | File | Description |
-          |----------|------|-------------|
-          | Windows x64 | `utf8clip-win-x64.exe` | Native AOT binary |
-          | Linux x64 | `utf8clip-linux-x64` | Native AOT binary |
-          | macOS ARM64 | `utf8clip-osx-arm64` | Native AOT binary |
-          | Cross-platform | `utf8clip-dotnet.zip` | Requires .NET 10 runtime |
+          | Platform | File |
+          |----------|------|
+          | Windows x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-win-x64.zip` |
+          | Linux x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
+          | macOS ARM64 | `utf8clip-${{ steps.version.outputs.VERSION }}-osx-arm64.zip` |
+          | Cross-platform (.NET 10) | `utf8clip-${{ steps.version.outputs.VERSION }}-dotnet.zip` |
 
           ### Usage
           ```bash
+          # Extract and use
+          unzip utf8clip-${{ steps.version.outputs.VERSION }}-<platform>.zip
+
           # Copy to clipboard
-          echo "Hello 💪" | utf8clip
+          echo "Hello 💪" | ./utf8clip
 
           # Paste from clipboard
-          utf8clip
+          ./utf8clip
 
-          # Cross-platform (requires dotnet)
-          echo "Hello 💪" | dotnet utf8clip.dll
+          # Cross-platform (requires .NET 10)
+          dotnet utf8clip.dll
           ```
 
           ### Platform Requirements
