@@ -162,10 +162,10 @@ jobs:
 
           | Platform | File |
           |----------|------|
+          | Cross-platform | `utf8clip-${{ steps.version.outputs.VERSION }}-dotnet.zip` (requires .NET 10) |
           | Windows x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-win-x64.zip` |
           | Linux x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
           | macOS ARM64 | `utf8clip-${{ steps.version.outputs.VERSION }}-osx-arm64.zip` |
-          | Cross-platform (.NET 10) | `utf8clip-${{ steps.version.outputs.VERSION }}-dotnet.zip` |
 
           ### Usage
           ```bash
@@ -183,6 +183,7 @@ jobs:
           ```
 
           ### Platform Requirements
+          - **Cross-platform (.NET)**: Requires .NET 10 runtime
           - **Windows**: Native, no dependencies
           - **Linux**: Requires `xclip` or `xsel`
           - **macOS**: Uses built-in `pbcopy`/`pbpaste`
