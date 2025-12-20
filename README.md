@@ -1,68 +1,85 @@
-# utf8clip [![NuGet](https://img.shields.io/nuget/v/utf8clip.svg)](https://www.nuget.org/packages/utf8clip/)
-Replacement for clip.exe in Windows that supports both read from/write to clipboard and uses UTF-8 encoding by default.
+# utf8clip
 
-Works well with PowerShell Core or console programs that explicitly output UTF-8 text.
+Cross-platform UTF-8 clipboard tool with full emoji support.
 
-## Installation
+Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
+- Native AOT binaries (no runtime required)
+- Cross-platform support (Windows, Linux, macOS)
+- Full UTF-8 and emoji support (💪🎉✅🚀)
 
-utf8clip is published as a .NET Core Global Tool so you can install it directly from the command line:
-```
-dotnet tool install --global utf8clip
-```
+## Downloads
 
-You can also download [utf8clip](https://github.com/bluemarsh/utf8clip/releases) and manually copy it to a directory in your PATH.
+| Platform | Binary | Size | Runtime Required |
+|----------|--------|------|------------------|
+| Windows x64 | `utf8clip-win-x64.exe` | ~1.6MB | None |
+| Windows ARM64 | `utf8clip-win-arm64.exe` | ~1.6MB | None |
+| Linux x64 | `utf8clip-linux-x64` | ~1.5MB | None (needs xclip/xsel) |
+| Linux ARM64 | `utf8clip-linux-arm64` | ~1.5MB | None (needs xclip/xsel) |
+| macOS x64 | `utf8clip-osx-x64` | ~1.5MB | None |
+| macOS ARM64 | `utf8clip-osx-arm64` | ~1.5MB | None |
+| Cross-platform | `utf8clip-dotnet.zip` | ~12KB | .NET 10 |
 
-.NET Core 3.0 or later runtime is required.
+Download from [Releases](https://github.com/Nucs/utf8clip/releases).
 
 ## Usage
-If started with file/piped input:
-- Copies the input, interpreted as UTF-8 text†, to the Windows clipboard.
 
-Otherwise:
-- Prints the contents of the Windows clipboard to output as UTF-8 text.
-
-†If there is a byte-order mark in the input it will be respected, e.g. for UTF-16 encoded files.
-
-## Examples
-
-### Copy program output to clipboard
+Copy to clipboard:
+```bash
+echo "Hello 💪" | utf8clip
+cat file.txt | utf8clip
 ```
-<program> | utf8clip
-```
-Places a copy of the UTF-8 output from <program> on to the Windows clipboard.
 
-Note that most native Windows commands like dir do not write UTF-8 output unless the console codepage is changed with chcp.
-
-### Copy file content to clipboard
-```
-utf8clip < README.md
-```
-Places a copy of the text from README.md on to the Windows clipboard.
-
-### Write clipboard content to console
-```
+Paste from clipboard:
+```bash
 utf8clip
+utf8clip > output.txt
 ```
-Writes the current contents of the Windows clipboard to the console.
 
-## PowerShell Core Examples
+Cross-platform DLL (requires .NET 10):
+```bash
+echo "Hello 💪" | dotnet utf8clip.dll
+dotnet utf8clip.dll > output.txt
+```
 
-### Copy program output to clipboard
-```
-ls | utf8clip
-```
-Places a copy of the current directory listing on to the Windows clipboard.
+## Platform Requirements
 
-This works correctly as PowerShell Core uses UTF-8 output by default.
+| Platform | Clipboard Backend |
+|----------|-------------------|
+| Windows | Native (user32.dll) |
+| Linux | `xclip` or `xsel` (install one) |
+| macOS | Built-in `pbcopy`/`pbpaste` |
 
-### Copy file content to clipboard
-```
-cat .\README.md | utf8clip
-```
-Places a copy of the text from README.md on to the Windows clipboard.
+### Linux Setup
+```bash
+# Ubuntu/Debian
+sudo apt install xclip
 
-### Write clipboard content to console
+# Fedora
+sudo dnf install xclip
+
+# Arch
+sudo pacman -S xclip
 ```
-utf8clip
+
+## Building
+
+```bash
+# AOT for current platform
+dotnet publish src/utf8clip.csproj -c Release -p:PublishAot=true
+
+# AOT for specific platform
+dotnet publish src/utf8clip.csproj -c Release -r linux-x64 -p:PublishAot=true
+dotnet publish src/utf8clip.csproj -c Release -r osx-arm64 -p:PublishAot=true
+
+# Cross-platform DLL
+dotnet build src/utf8clip.csproj -c Release
 ```
-Writes the current contents of the Windows clipboard to the console.
+
+## License
+
+MIT License - see [LICENSE](LICENSE)
+
+## Credits
+
+- Original: [Aaron Meyers / bluemarsh](https://github.com/bluemarsh/utf8clip)
+- Cross-platform fork: [Nucs](https://github.com/Nucs/utf8clip)

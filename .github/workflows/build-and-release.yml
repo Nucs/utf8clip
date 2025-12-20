@@ -1,0 +1,185 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ "master", "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+permissions: write-all
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          # Windows
+          - os: windows-latest
+            runtime: win-x64
+            artifact: utf8clip-win-x64.exe
+          - os: windows-latest
+            runtime: win-arm64
+            artifact: utf8clip-win-arm64.exe
+          # Linux
+          - os: ubuntu-latest
+            runtime: linux-x64
+            artifact: utf8clip-linux-x64
+          - os: ubuntu-latest
+            runtime: linux-arm64
+            artifact: utf8clip-linux-arm64
+          # macOS
+          - os: macos-latest
+            runtime: osx-x64
+            artifact: utf8clip-osx-x64
+          - os: macos-latest
+            runtime: osx-arm64
+            artifact: utf8clip-osx-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        dotnet-quality: 'preview'
+
+    - name: Publish AOT
+      run: |
+        dotnet publish src/utf8clip.csproj \
+          --configuration Release \
+          --runtime ${{ matrix.runtime }} \
+          -p:PublishAot=true \
+          --output publish
+      shell: bash
+
+    - name: Rename artifact (Unix)
+      if: runner.os != 'Windows'
+      run: mv publish/utf8clip publish/${{ matrix.artifact }}
+
+    - name: Rename artifact (Windows)
+      if: runner.os == 'Windows'
+      run: mv publish/utf8clip.exe publish/${{ matrix.artifact }}
+      shell: bash
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact }}
+        path: publish/${{ matrix.artifact }}
+        retention-days: 5
+
+  build-dll:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        dotnet-quality: 'preview'
+
+    - name: Build DLL
+      run: dotnet build src/utf8clip.csproj --configuration Release
+
+    - name: Create package
+      run: |
+        mkdir -p package
+        cp src/bin/Release/net10.0/utf8clip.dll package/
+        cp src/bin/Release/net10.0/utf8clip.runtimeconfig.json package/
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: utf8clip-dotnet
+        path: package/
+        retention-days: 5
+
+  create-release:
+    needs: [build, build-dll]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Prepare release files
+      run: |
+        mkdir -p release
+        # Move all AOT binaries
+        find artifacts -type f -name "utf8clip-*" -exec mv {} release/ \;
+        # Zip the DLL package
+        cd artifacts/utf8clip-dotnet && zip -r ../../release/utf8clip-dotnet.zip . && cd ../..
+        # List files
+        ls -la release/
+
+    - name: Generate checksums
+      run: |
+        cd release
+        sha256sum * > SHA256SUMS.txt
+        cat SHA256SUMS.txt
+
+    - name: Extract version
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Check if prerelease
+      id: prerelease
+      run: |
+        if [[ "${{ steps.version.outputs.VERSION }}" == *"-"* ]]; then
+          echo "IS_PRERELEASE=true" >> $GITHUB_OUTPUT
+        else
+          echo "IS_PRERELEASE=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          release/*
+        draft: false
+        prerelease: ${{ steps.prerelease.outputs.IS_PRERELEASE }}
+        generate_release_notes: true
+        body: |
+          ## utf8clip v${{ steps.version.outputs.VERSION }}
+
+          Cross-platform UTF-8 clipboard tool with emoji support.
+
+          ### Downloads
+
+          | Platform | File | Description |
+          |----------|------|-------------|
+          | Windows x64 | `utf8clip-win-x64.exe` | Native AOT binary |
+          | Windows ARM64 | `utf8clip-win-arm64.exe` | Native AOT binary |
+          | Linux x64 | `utf8clip-linux-x64` | Native AOT binary |
+          | Linux ARM64 | `utf8clip-linux-arm64` | Native AOT binary |
+          | macOS x64 | `utf8clip-osx-x64` | Native AOT binary |
+          | macOS ARM64 | `utf8clip-osx-arm64` | Native AOT binary |
+          | Cross-platform | `utf8clip-dotnet.zip` | Requires .NET 10 runtime |
+
+          ### Usage
+          ```bash
+          # Copy to clipboard
+          echo "Hello 💪" | utf8clip
+
+          # Paste from clipboard
+          utf8clip
+
+          # Cross-platform (requires dotnet)
+          echo "Hello 💪" | dotnet utf8clip.dll
+          ```
+
+          ### Platform Requirements
+          - **Windows**: Native, no dependencies
+          - **Linux**: Requires `xclip` or `xsel`
+          - **macOS**: Uses built-in `pbcopy`/`pbpaste`
