@@ -59,7 +59,7 @@ public static class Clipboard
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return "Linux (xclip/xsel)";
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "macOS (NSPasteboard)";
+            return "macOS (NSPasteboard/pbcopy)";
         else
             return "Unknown";
     }
@@ -305,47 +305,66 @@ internal static partial class MacOSClipboard
 
     public static string? GetText()
     {
-        EnsureInitialized();
+        // Try native NSPasteboard first
+        try
+        {
+            EnsureInitialized();
+            var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
+            if (pasteboard != 0)
+            {
+                var nsString = objc_msgSend(pasteboard, _selStringForType, _nsStringPboardType);
+                var result = NSStringToString(nsString);
+                if (result != null)
+                    return result;
+            }
+        }
+        catch
+        {
+            // Fall through to pbpaste
+        }
 
-        // Get general pasteboard: [NSPasteboard generalPasteboard]
-        var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
-        if (pasteboard == 0)
-            return null;
+        // Fallback to pbpaste (for headless/CI environments)
+        var (exitCode, output) = ProcessHelper.Run("pbpaste", "");
+        if (exitCode == 0)
+            return output;
 
-        // Get string: [pasteboard stringForType:NSPasteboardTypeString]
-        var nsString = objc_msgSend(pasteboard, _selStringForType, _nsStringPboardType);
-        return NSStringToString(nsString);
+        throw new InvalidOperationException("Cannot access clipboard");
     }
 
     public static void SetText(string text)
     {
-        EnsureInitialized();
-
-        // Get general pasteboard
-        var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
-        if (pasteboard == 0)
-            throw new InvalidOperationException("Cannot get pasteboard");
-
-        // Clear contents: [pasteboard clearContents]
-        objc_msgSend(pasteboard, _selClearContents);
-
-        // Create NSString from text
-        var nsString = CreateNSString(text);
-        if (nsString == 0)
-            throw new InvalidOperationException("Cannot create NSString");
-
+        // Try native NSPasteboard first
         try
         {
-            // Set string: [pasteboard setString:nsString forType:NSPasteboardTypeString]
-            var success = objc_msgSend_bool(pasteboard, _selSetStringForType, nsString, _nsStringPboardType);
-            if (!success)
-                throw new InvalidOperationException("Cannot set clipboard text");
+            EnsureInitialized();
+            var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
+            if (pasteboard != 0)
+            {
+                objc_msgSend(pasteboard, _selClearContents);
+                var nsString = CreateNSString(text);
+                if (nsString != 0)
+                {
+                    try
+                    {
+                        if (objc_msgSend_bool(pasteboard, _selSetStringForType, nsString, _nsStringPboardType))
+                            return; // Success with native API
+                    }
+                    finally
+                    {
+                        objc_msgSend(nsString, _selRelease);
+                    }
+                }
+            }
         }
-        finally
+        catch
         {
-            // Release the NSString we created
-            objc_msgSend(nsString, _selRelease);
+            // Fall through to pbcopy
         }
+
+        // Fallback to pbcopy (for headless/CI environments)
+        var exitCode = ProcessHelper.RunWithInput("pbcopy", "", text);
+        if (exitCode != 0)
+            throw new InvalidOperationException("Cannot set clipboard text");
     }
 }
 
