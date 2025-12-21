@@ -16,7 +16,6 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-          - os: ubuntu-latest
           - os: macos-latest
 
     runs-on: ${{ matrix.os }}
@@ -30,18 +29,7 @@ jobs:
         dotnet-version: '10.0.x'
         dotnet-quality: 'preview'
 
-    - name: Install xclip (Linux)
-      if: runner.os == 'Linux'
-      run: sudo apt-get update && sudo apt-get install -y xclip xvfb
-
-    - name: Run tests (Linux with virtual display)
-      if: runner.os == 'Linux'
-      run: xvfb-run --auto-servernum dotnet test --configuration Release --verbosity minimal --nologo
-      env:
-        DISPLAY: ':99'
-
-    - name: Run tests (Windows/macOS)
-      if: runner.os != 'Linux'
+    - name: Run tests
       run: dotnet test --configuration Release --verbosity minimal --nologo
 
   build:
@@ -53,10 +41,6 @@ jobs:
             runtime: win-x64
             platform: win-x64
             binary: utf8clip.exe
-          - os: ubuntu-latest
-            runtime: linux-x64
-            platform: linux-x64
-            binary: utf8clip
           - os: macos-latest
             runtime: osx-arm64
             platform: osx-arm64
@@ -176,12 +160,6 @@ jobs:
         zip ../../release/utf8clip-${VERSION}-win-x64.zip utf8clip.exe
         cd ../..
 
-        # Linux x64
-        cd artifacts/linux-x64
-        chmod +x utf8clip
-        zip ../../release/utf8clip-${VERSION}-linux-x64.zip utf8clip
-        cd ../..
-
         # macOS ARM64
         cd artifacts/osx-arm64
         chmod +x utf8clip
@@ -223,7 +201,7 @@ jobs:
         body: |
           ## utf8clip v${{ steps.version.outputs.VERSION }}
 
-          Cross-platform UTF-8 clipboard tool with emoji support.
+          UTF-8 clipboard tool with emoji support for Windows and macOS.
 
           ### Downloads
 
@@ -231,7 +209,6 @@ jobs:
           |----------|------|
           | Cross-platform | `utf8clip-${{ steps.version.outputs.VERSION }}-dotnet.zip` (requires .NET 10) |
           | Windows x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-win-x64.zip` |
-          | Linux x64 | `utf8clip-${{ steps.version.outputs.VERSION }}-linux-x64.zip` |
           | macOS ARM64 | `utf8clip-${{ steps.version.outputs.VERSION }}-osx-arm64.zip` |
 
           ### Usage
@@ -252,5 +229,4 @@ jobs:
           ### Platform Requirements
           - **Cross-platform (.NET)**: Requires .NET 10 runtime
           - **Windows**: Native, no dependencies
-          - **Linux**: Requires `xclip` or `xsel`
           - **macOS**: Uses built-in `pbcopy`/`pbpaste`

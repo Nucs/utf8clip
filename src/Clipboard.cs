@@ -17,12 +17,10 @@ public static class Clipboard
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return WindowsClipboard.GetText();
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return LinuxClipboard.GetText();
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             return MacOSClipboard.GetText();
         else
-            throw new PlatformNotSupportedException("Unsupported platform");
+            throw new PlatformNotSupportedException("Unsupported platform (Windows and macOS only)");
     }
 
     /// <summary>
@@ -33,12 +31,10 @@ public static class Clipboard
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             WindowsClipboard.SetText(text);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            LinuxClipboard.SetText(text);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             MacOSClipboard.SetText(text);
         else
-            throw new PlatformNotSupportedException("Unsupported platform");
+            throw new PlatformNotSupportedException("Unsupported platform (Windows and macOS only)");
     }
 
     /// <summary>
@@ -56,12 +52,10 @@ public static class Clipboard
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return "Windows (user32.dll)";
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return "Linux (xclip/xsel)";
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             return "macOS (NSPasteboard/pbcopy)";
         else
-            return "Unknown";
+            return "Unsupported";
     }
 }
 
@@ -174,38 +168,6 @@ internal static partial class WindowsClipboard
         {
             CloseClipboard();
         }
-    }
-}
-
-// ===== Linux Implementation (xclip/xsel) =====
-internal static class LinuxClipboard
-{
-    public static string? GetText()
-    {
-        // Try xclip first, then xsel
-        var (exitCode, output) = ProcessHelper.Run("xclip", "-selection clipboard -o");
-        if (exitCode == 0)
-            return output;
-
-        (exitCode, output) = ProcessHelper.Run("xsel", "--clipboard --output");
-        if (exitCode == 0)
-            return output;
-
-        throw new InvalidOperationException("Install xclip or xsel for clipboard support");
-    }
-
-    public static void SetText(string text)
-    {
-        // Try xclip first, then xsel
-        var exitCode = ProcessHelper.RunWithInput("xclip", "-selection clipboard", text);
-        if (exitCode == 0)
-            return;
-
-        exitCode = ProcessHelper.RunWithInput("xsel", "--clipboard --input", text);
-        if (exitCode == 0)
-            return;
-
-        throw new InvalidOperationException("Install xclip or xsel for clipboard support");
     }
 }
 

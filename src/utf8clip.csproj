@@ -21,7 +21,7 @@
     <Company>Nucs</Company>
     <Authors>Aaron Meyers, EliBelash</Authors>
     <Copyright>Copyright (c) 2019 Aaron Meyers, 2024-2025 Cross-platform by EliBelash</Copyright>
-    <Description>Cross-platform UTF-8 clipboard tool with emoji support. Windows (native), Linux (xclip/xsel), macOS (pbcopy/pbpaste).</Description>
+    <Description>UTF-8 clipboard tool with emoji support. Windows (native), macOS (pbcopy/pbpaste).</Description>
     <RepositoryUrl>https://github.com/Nucs/utf8clip</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>clipboard, console, PowerShell, utf8, cross-platform, emoji</PackageTags>

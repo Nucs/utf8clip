@@ -13,7 +13,6 @@ dotnet publish src/utf8clip.csproj -c Release -p:PublishAot=true
 
 # Publish AOT for specific platform (must build ON that platform)
 dotnet publish src/utf8clip.csproj -c Release -r win-x64 -p:PublishAot=true
-dotnet publish src/utf8clip.csproj -c Release -r linux-x64 -p:PublishAot=true
 dotnet publish src/utf8clip.csproj -c Release -r osx-arm64 -p:PublishAot=true
 
 # Run tests
@@ -31,14 +30,12 @@ Two-file codebase in `src/` (namespace: `Nucs.Utf8Clip`):
 
 Platform backends:
 - **Windows**: Native P/Invoke to user32.dll + kernel32.dll (CF_UNICODETEXT = UTF-16 format)
-- **Linux**: Shells out to xclip or xsel (tries xclip first, throws `InvalidOperationException` if neither available)
 - **macOS**: Native P/Invoke to Objective-C runtime + NSPasteboard (preserves BOM and all Unicode)
 
 Internal classes:
 - `WindowsClipboard`: P/Invoke with retry logic (10 attempts, 10ms delay)
-- `LinuxClipboard`: Uses xclip `-selection clipboard` or xsel `--clipboard`
 - `MacOSClipboard`: P/Invoke to libobjc.A.dylib, calls NSPasteboard via objc_msgSend
-- `ProcessHelper`: Runs external processes for Linux clipboard tools
+- `ProcessHelper`: Runs external processes for macOS pbcopy/pbpaste fallback
 
 ## CLI Behavior
 
@@ -64,7 +61,6 @@ Exit codes: `0` success, `1` error. Errors written to stderr as `Error: {message
 - `Clear()` implemented as `SetText(string.Empty)`
 - Write operations use `UTF8Encoding(false)` (no BOM); Windows clipboard uses UTF-16 internally
 - `GetText()` returns `null` on Windows if clipboard unavailable (no exception)
-- Linux uses "clipboard" selection (not primary selection)
 
 ## Testing
 
@@ -76,6 +72,5 @@ Test files in `tests/` using xUnit:
 
 Notes:
 - Tests interact with real system clipboard
-- Linux CI requires xvfb for X11 display emulation
 - Some integration tests skipped: "Console.IsOutputRedirected detection differs when run from test harness"
 - Embedded `\0` may truncate text (Windows null-terminated format)
