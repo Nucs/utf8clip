@@ -32,13 +32,13 @@ Two-file codebase in `src/` (namespace: `Nucs.Utf8Clip`):
 Platform backends:
 - **Windows**: Native P/Invoke to user32.dll + kernel32.dll (CF_UNICODETEXT = UTF-16 format)
 - **Linux**: Shells out to xclip or xsel (tries xclip first, throws `InvalidOperationException` if neither available)
-- **macOS**: Shells out to pbcopy/pbpaste (throws `InvalidOperationException` if unavailable)
+- **macOS**: Native P/Invoke to Objective-C runtime + NSPasteboard (preserves BOM and all Unicode)
 
 Internal classes:
 - `WindowsClipboard`: P/Invoke with retry logic (10 attempts, 10ms delay)
 - `LinuxClipboard`: Uses xclip `-selection clipboard` or xsel `--clipboard`
-- `MacOSClipboard`: Uses pbcopy/pbpaste
-- `ProcessHelper`: Runs external processes, catches all exceptions returning -1
+- `MacOSClipboard`: P/Invoke to libobjc.A.dylib, calls NSPasteboard via objc_msgSend
+- `ProcessHelper`: Runs external processes for Linux clipboard tools
 
 ## CLI Behavior
 

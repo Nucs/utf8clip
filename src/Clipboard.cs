@@ -59,7 +59,7 @@ public static class Clipboard
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return "Linux (xclip/xsel)";
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "macOS (pbcopy/pbpaste)";
+            return "macOS (NSPasteboard)";
         else
             return "Unknown";
     }
@@ -209,23 +209,143 @@ internal static class LinuxClipboard
     }
 }
 
-// ===== macOS Implementation (pbcopy/pbpaste) =====
-internal static class MacOSClipboard
+// ===== macOS Implementation (Native NSPasteboard) =====
+internal static partial class MacOSClipboard
 {
+    // Objective-C runtime imports
+    private const string ObjCRuntime = "/usr/lib/libobjc.A.dylib";
+    private const string AppKit = "/System/Library/Frameworks/AppKit.framework/AppKit";
+
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_getClass", StringMarshalling = StringMarshalling.Utf8)]
+    private static partial nint objc_getClass(string name);
+
+    [LibraryImport(ObjCRuntime, EntryPoint = "sel_registerName", StringMarshalling = StringMarshalling.Utf8)]
+    private static partial nint sel_registerName(string name);
+
+    // objc_msgSend overloads for different signatures
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_msgSend")]
+    private static partial nint objc_msgSend(nint receiver, nint selector);
+
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_msgSend")]
+    private static partial nint objc_msgSend(nint receiver, nint selector, nint arg1);
+
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_msgSend")]
+    private static partial nint objc_msgSend(nint receiver, nint selector, nint arg1, nint arg2);
+
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_msgSend")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool objc_msgSend_bool(nint receiver, nint selector, nint arg1, nint arg2);
+
+    // NSString helpers
+    [LibraryImport(ObjCRuntime, EntryPoint = "objc_msgSend", StringMarshalling = StringMarshalling.Utf8)]
+    private static partial nint objc_msgSend_initWithUTF8String(nint receiver, nint selector, string str);
+
+    // Cache selectors and classes for performance
+    private static nint _nsPasteboardClass;
+    private static nint _nsStringClass;
+    private static nint _selGeneralPasteboard;
+    private static nint _selStringForType;
+    private static nint _selClearContents;
+    private static nint _selSetStringForType;
+    private static nint _selUTF8String;
+    private static nint _selAlloc;
+    private static nint _selInitWithUTF8String;
+    private static nint _selRelease;
+    private static nint _nsStringPboardType;
+
+    private static void EnsureInitialized()
+    {
+        if (_nsPasteboardClass != 0)
+            return;
+
+        // Get classes
+        _nsPasteboardClass = objc_getClass("NSPasteboard");
+        _nsStringClass = objc_getClass("NSString");
+
+        // Get selectors
+        _selGeneralPasteboard = sel_registerName("generalPasteboard");
+        _selStringForType = sel_registerName("stringForType:");
+        _selClearContents = sel_registerName("clearContents");
+        _selSetStringForType = sel_registerName("setString:forType:");
+        _selUTF8String = sel_registerName("UTF8String");
+        _selAlloc = sel_registerName("alloc");
+        _selInitWithUTF8String = sel_registerName("initWithUTF8String:");
+        _selRelease = sel_registerName("release");
+
+        // Get NSPasteboardTypeString constant
+        // This is defined as NSString* in AppKit, we need to load it
+        _nsStringPboardType = GetNSPasteboardTypeString();
+    }
+
+    private static nint GetNSPasteboardTypeString()
+    {
+        // NSPasteboardTypeString is "public.utf8-plain-text"
+        // We create an NSString with this value
+        var alloc = objc_msgSend(_nsStringClass, _selAlloc);
+        return objc_msgSend_initWithUTF8String(alloc, _selInitWithUTF8String, "public.utf8-plain-text");
+    }
+
+    private static nint CreateNSString(string text)
+    {
+        var alloc = objc_msgSend(_nsStringClass, _selAlloc);
+        return objc_msgSend_initWithUTF8String(alloc, _selInitWithUTF8String, text);
+    }
+
+    private static string? NSStringToString(nint nsString)
+    {
+        if (nsString == 0)
+            return null;
+
+        var utf8Ptr = objc_msgSend(nsString, _selUTF8String);
+        if (utf8Ptr == 0)
+            return null;
+
+        return Marshal.PtrToStringUTF8(utf8Ptr);
+    }
+
     public static string? GetText()
     {
-        var (exitCode, output) = ProcessHelper.Run("pbpaste", "");
-        if (exitCode == 0)
-            return output;
+        EnsureInitialized();
 
-        throw new InvalidOperationException("pbpaste not available");
+        // Get general pasteboard: [NSPasteboard generalPasteboard]
+        var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
+        if (pasteboard == 0)
+            return null;
+
+        // Get string: [pasteboard stringForType:NSPasteboardTypeString]
+        var nsString = objc_msgSend(pasteboard, _selStringForType, _nsStringPboardType);
+        return NSStringToString(nsString);
     }
 
     public static void SetText(string text)
     {
-        var exitCode = ProcessHelper.RunWithInput("pbcopy", "", text);
-        if (exitCode != 0)
-            throw new InvalidOperationException("pbcopy not available");
+        EnsureInitialized();
+
+        // Get general pasteboard
+        var pasteboard = objc_msgSend(_nsPasteboardClass, _selGeneralPasteboard);
+        if (pasteboard == 0)
+            throw new InvalidOperationException("Cannot get pasteboard");
+
+        // Clear contents: [pasteboard clearContents]
+        objc_msgSend(pasteboard, _selClearContents);
+
+        // Create NSString from text
+        var nsString = CreateNSString(text);
+        if (nsString == 0)
+            throw new InvalidOperationException("Cannot create NSString");
+
+        try
+        {
+            // Set string: [pasteboard setString:nsString forType:NSPasteboardTypeString]
+            var success = objc_msgSend_bool(pasteboard, _selSetStringForType, nsString, _nsStringPboardType);
+            if (!success)
+                throw new InvalidOperationException("Cannot set clipboard text");
+        }
+        finally
+        {
+            // Release the NSString we created
+            objc_msgSend(nsString, _selRelease);
+        }
     }
 }
 
