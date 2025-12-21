@@ -42,6 +42,14 @@ public static class Clipboard
     }
 
     /// <summary>
+    /// Clears the system clipboard.
+    /// </summary>
+    public static void Clear()
+    {
+        SetText(string.Empty);
+    }
+
+    /// <summary>
     /// Gets the current platform's clipboard backend name.
     /// </summary>
     public static string GetBackendName()
