@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Nucs.Utf8Clip;
 
 namespace utf8clip.Tests;
