@@ -371,6 +371,8 @@ internal static partial class MacOSClipboard
 // ===== Process Helper =====
 internal static class ProcessHelper
 {
+    private const int TimeoutMs = 5000; // 5 second timeout
+
     public static (int exitCode, string output) Run(string fileName, string arguments)
     {
         try
@@ -391,7 +393,12 @@ internal static class ProcessHelper
 
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
-            process.WaitForExit();
+
+            if (!process.WaitForExit(TimeoutMs))
+            {
+                process.Kill();
+                return (-1, "");
+            }
 
             return (process.ExitCode, output);
         }
@@ -423,7 +430,12 @@ internal static class ProcessHelper
             {
                 writer.Write(input);
             }
-            process.WaitForExit();
+
+            if (!process.WaitForExit(TimeoutMs))
+            {
+                process.Kill();
+                return -1;
+            }
 
             return process.ExitCode;
         }
