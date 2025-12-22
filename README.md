@@ -11,8 +11,13 @@ Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
 
 **Windows** `clip.exe` mangles UTF-8/emoji. **macOS** `pbcopy`/`pbpaste` work but lack options.
 
-| | clip.exe | pbcopy/pbpaste | utf8clip |
-|-|----------|----------------|----------|
+| Input | clip.exe | utf8clip |
+|-------|----------|----------|
+| `Hello 💪🎉 World` | `Hello ≡ƒÆ¬≡ƒÄë World` | `Hello 💪🎉 World` ✓ |
+| `中文测试` | `Σ╕¡µûçµ╡ïΦ»ò` | `中文测试` ✓ |
+
+| Feature | clip.exe | pbcopy/pbpaste | utf8clip |
+|---------|----------|----------------|----------|
 | UTF-8/Emoji | ❌ Corrupts | ✓ | ✓ |
 | Paste to stdout | ❌ | ✓ | ✓ |
 | Clear clipboard | ❌ | ❌ | ✓ |
