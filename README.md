@@ -42,9 +42,14 @@ Paste from clipboard:
 ./utf8clip > output.txt
 ```
 
-Help:
+Options:
 ```bash
-./utf8clip --help
+./utf8clip --help          # or -h or -?
+./utf8clip --version       # Shows version+commit (e.g., 2.1.0+abc1234)
+./utf8clip --clear         # Clear clipboard
+echo "text" | ./utf8clip --no-newline    # Strip trailing newlines
+echo "more" | ./utf8clip --append        # Append to existing clipboard
+echo "text" | ./utf8clip -a -n           # Combine options
 ```
 
 ### Cross-platform DLL
@@ -59,12 +64,22 @@ echo "Hello 💪" | dotnet utf8clip.dll
 dotnet utf8clip.dll > output.txt
 ```
 
+## Behavior
+
+**Mode detection** (in priority order):
+1. `--clear` flag → clears clipboard and exits
+2. Stdin redirected → **copy mode** (stdin → clipboard)
+3. Stdout redirected → **paste mode** (clipboard → file, UTF-8 no BOM)
+4. Neither redirected → **paste mode** (clipboard → terminal)
+
+**Exit codes**: `0` success, `1` error (errors written to stderr)
+
 ## Platform Requirements
 
 | Platform | Clipboard Backend | Notes |
 |----------|-------------------|-------|
-| Windows | Native (user32.dll) | No dependencies |
-| macOS | Native (NSPasteboard) | No dependencies |
+| Windows | Native (user32.dll) | Retry logic (10 attempts) for locked clipboard |
+| macOS | Native (NSPasteboard) | Falls back to pbcopy/pbpaste in headless environments |
 | Cross-platform (.NET) | Depends on OS | Requires .NET 10 runtime |
 
 ## Building
