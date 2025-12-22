@@ -4,7 +4,7 @@ UTF-8 clipboard tool for Windows and macOS with full emoji support.
 
 Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
 - Windows and macOS support
-- Native AOT binaries (no runtime required)
+- Native AOT binaries (no runtime required) or cross-platform .NET DLL
 - Full UTF-8 and emoji support (💪🎉✅🚀)
 
 ## Why not `clip.exe`?
