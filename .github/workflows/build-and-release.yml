@@ -64,7 +64,7 @@ jobs:
         if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
           VERSION="${GITHUB_REF#refs/tags/v}"
         else
-          VERSION="0.0.0-dev"
+          VERSION="0.0.0"
         fi
         COMMIT_SHA="${GITHUB_SHA:0:7}"
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
@@ -107,7 +107,7 @@ jobs:
         if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
           VERSION="${GITHUB_REF#refs/tags/v}"
         else
-          VERSION="0.0.0-dev"
+          VERSION="0.0.0"
         fi
         COMMIT_SHA="${GITHUB_SHA:0:7}"
         echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
