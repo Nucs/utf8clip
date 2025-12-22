@@ -25,8 +25,6 @@ public class ClipboardTests
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             Assert.Contains("Windows", backend);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            Assert.Contains("Linux", backend);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             Assert.Contains("macOS", backend);
     }
@@ -46,6 +44,17 @@ public class ClipboardTests
     public void SetText_GetText_EmptyString()
     {
         Clipboard.SetText("");
+        var result = Clipboard.GetText();
+
+        Assert.Equal("", result);
+    }
+
+    [Fact]
+    public void Clear_EmptiesClipboard()
+    {
+        Clipboard.SetText("Text to clear");
+
+        Clipboard.Clear();
         var result = Clipboard.GetText();
 
         Assert.Equal("", result);

@@ -109,6 +109,65 @@ public class IntegrationTests : IDisposable
     }
 
     [Fact]
+    public void Version_ReturnsVersionString()
+    {
+        var (exitCode, stdout, stderr) = RunUtf8Clip(args: "--version");
+
+        Assert.Equal(0, exitCode);
+        Assert.Matches(@"\d+\.\d+\.\d+", stdout); // Matches semver pattern
+    }
+
+    [Fact]
+    public void Clear_ClearsClipboard()
+    {
+        // Set something first
+        Clipboard.SetText("Text to clear");
+
+        var (exitCode, stdout, stderr) = RunUtf8Clip(args: "--clear");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("", Clipboard.GetText());
+    }
+
+    [Fact]
+    public void Append_AppendsToClipboard()
+    {
+        Clipboard.SetText("First");
+
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: " Second", args: "--append");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("First Second", Clipboard.GetText());
+    }
+
+    [Fact]
+    public void NoNewline_StripsTrailingNewline()
+    {
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\n", args: "--no-newline");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("Text", Clipboard.GetText());
+    }
+
+    [Fact]
+    public void NoNewline_StripsWindowsNewline()
+    {
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\r\n", args: "--no-newline");
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("Text", Clipboard.GetText());
+    }
+
+    [Fact]
+    public void UnknownOption_ReturnsError()
+    {
+        var (exitCode, stdout, stderr) = RunUtf8Clip(args: "--invalid-option");
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("Unknown option", stderr);
+    }
+
+    [Fact]
     public void PipeInput_SetsClipboard()
     {
         var testText = $"Integration_{Guid.NewGuid()}";

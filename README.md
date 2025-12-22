@@ -1,20 +1,30 @@
 # utf8clip
 
-Cross-platform UTF-8 clipboard tool with full emoji support.
+UTF-8 clipboard tool for Windows and macOS with full emoji support.
 
 Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
-- Cross-platform support (Windows, Linux, macOS)
+- Windows and macOS support
 - Native AOT binaries (no runtime required)
 - Full UTF-8 and emoji support (💪🎉✅🚀)
+
+## Why not `clip.exe`?
+
+Windows' built-in `clip.exe` mangles UTF-8 and emoji:
+
+| Input | clip.exe | utf8clip |
+|-------|----------|----------|
+| `Hello 💪🎉 World` | `Hello ≡ƒÆ¬≡ƒÄë World` | `Hello 💪🎉 World` ✓ |
+| `中文测试` | `Σ╕¡µûçµ╡ïΦ»ò` | `中文测试` ✓ |
+
+Plus `utf8clip` adds: **paste**, **clear**, **append**, and **strip newline** options.
 
 ## Downloads
 
 | Platform | File | Runtime Required |
 |----------|------|------------------|
-| Cross-platform | `utf8clip-<version>-dotnet.zip` | .NET 10 |
 | Windows x64 | `utf8clip-<version>-win-x64.zip` | None |
-| Linux x64 | `utf8clip-<version>-linux-x64.zip` | None (needs xclip/xsel) |
 | macOS ARM64 | `utf8clip-<version>-osx-arm64.zip` | None |
+| Cross-platform | `utf8clip-<version>-dotnet.zip` | .NET 10 |
 
 Download from [Releases](https://github.com/Nucs/utf8clip/releases).
 
@@ -53,22 +63,9 @@ dotnet utf8clip.dll > output.txt
 
 | Platform | Clipboard Backend | Notes |
 |----------|-------------------|-------|
-| Cross-platform (.NET) | Depends on OS | Requires .NET 10 runtime |
 | Windows | Native (user32.dll) | No dependencies |
-| Linux | `xclip` or `xsel` | Install one (tries xclip first) |
-| macOS | `pbcopy`/`pbpaste` | Built-in, no dependencies |
-
-### Linux Setup
-```bash
-# Ubuntu/Debian
-sudo apt install xclip
-
-# Fedora
-sudo dnf install xclip
-
-# Arch
-sudo pacman -S xclip
-```
+| macOS | Native (NSPasteboard) | No dependencies |
+| Cross-platform (.NET) | Depends on OS | Requires .NET 10 runtime |
 
 ## Building
 
@@ -78,10 +75,9 @@ dotnet publish src/utf8clip.csproj -c Release -p:PublishAot=true
 
 # AOT for specific platform (must build ON that platform)
 dotnet publish src/utf8clip.csproj -c Release -r win-x64 -p:PublishAot=true
-dotnet publish src/utf8clip.csproj -c Release -r linux-x64 -p:PublishAot=true
 dotnet publish src/utf8clip.csproj -c Release -r osx-arm64 -p:PublishAot=true
 
-# Cross-platform DLL (runs anywhere with .NET 10)
+# Cross-platform DLL (runs on Windows/macOS with .NET 10)
 dotnet build src/utf8clip.csproj -c Release
 ```
 
