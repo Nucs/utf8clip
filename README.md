@@ -7,16 +7,17 @@ Fork of [bluemarsh/utf8clip](https://github.com/bluemarsh/utf8clip) with:
 - Native AOT binaries (no runtime required) or cross-platform .NET DLL
 - Full UTF-8 and emoji support (💪🎉✅🚀)
 
-## Why not `clip.exe`?
+## Why utf8clip?
 
-Windows' built-in `clip.exe` mangles UTF-8 and emoji:
+**Windows** `clip.exe` mangles UTF-8/emoji. **macOS** `pbcopy`/`pbpaste` work but lack options.
 
-| Input | clip.exe | utf8clip |
-|-------|----------|----------|
-| `Hello 💪🎉 World` | `Hello ≡ƒÆ¬≡ƒÄë World` | `Hello 💪🎉 World` ✓ |
-| `中文测试` | `Σ╕¡µûçµ╡ïΦ»ò` | `中文测试` ✓ |
-
-Plus `utf8clip` adds: **paste**, **clear**, **append**, and **strip newline** options.
+| | clip.exe | pbcopy/pbpaste | utf8clip |
+|-|----------|----------------|----------|
+| UTF-8/Emoji | ❌ Corrupts | ✓ | ✓ |
+| Paste to stdout | ❌ | ✓ | ✓ |
+| Clear clipboard | ❌ | ❌ | ✓ |
+| Append mode | ❌ | ❌ | ✓ |
+| Strip newline | ❌ | ❌ | ✓ |
 
 ## Downloads
 
@@ -30,27 +31,25 @@ Download from [Releases](https://github.com/Nucs/utf8clip/releases).
 
 ## Usage
 
-Copy to clipboard:
 ```bash
-echo "Hello 💪" | ./utf8clip
-cat file.txt | ./utf8clip
+# Copy to clipboard
+echo "Hello 💪" | utf8clip
+cat file.txt | utf8clip
+
+# Paste from clipboard
+utf8clip                    # Print to terminal
+utf8clip > output.txt       # Save to file
+
+# Options
+utf8clip --help             # or -h or -?
+utf8clip --version          # Shows version+commit (e.g., 2.1.0+abc1234)
+utf8clip --clear            # Clear clipboard
+echo "text" | utf8clip -n   # Strip trailing newlines (--no-newline)
+echo "more" | utf8clip -a   # Append to clipboard (--append)
+echo "text" | utf8clip -a -n  # Combine options
 ```
 
-Paste from clipboard:
-```bash
-./utf8clip
-./utf8clip > output.txt
-```
-
-Options:
-```bash
-./utf8clip --help          # or -h or -?
-./utf8clip --version       # Shows version+commit (e.g., 2.1.0+abc1234)
-./utf8clip --clear         # Clear clipboard
-echo "text" | ./utf8clip --no-newline    # Strip trailing newlines
-echo "more" | ./utf8clip --append        # Append to existing clipboard
-echo "text" | ./utf8clip -a -n           # Combine options
-```
+> **Note**: On Unix/macOS use `./utf8clip` if not in PATH. On Windows use `utf8clip.exe` or `.\utf8clip.exe` in PowerShell.
 
 ### Cross-platform DLL
 
@@ -74,6 +73,8 @@ dotnet utf8clip.dll > output.txt
 
 **Exit codes**: `0` success, `1` error (errors written to stderr)
 
+**Empty clipboard**: Returns empty string (no error)
+
 ## Platform Requirements
 
 | Platform | Clipboard Backend | Notes |
@@ -94,6 +95,9 @@ dotnet publish src/utf8clip.csproj -c Release -r osx-arm64 -p:PublishAot=true
 
 # Cross-platform DLL (runs on Windows/macOS with .NET 10)
 dotnet build src/utf8clip.csproj -c Release
+
+# Run tests
+dotnet test
 ```
 
 ## License
