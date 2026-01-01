@@ -134,7 +134,8 @@ public class IntegrationTests : IDisposable
     {
         Clipboard.SetText("First");
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: " Second", args: "--append");
+        // Use -i to force copy mode (test harness redirects both stdin and stdout)
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: " Second", args: "-i --append");
 
         Assert.Equal(0, exitCode);
         Assert.Equal("First Second", Clipboard.GetText());
@@ -143,7 +144,8 @@ public class IntegrationTests : IDisposable
     [Fact]
     public void NoNewline_StripsTrailingNewline()
     {
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\n", args: "--no-newline");
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\n", args: "-i --no-newline");
 
         Assert.Equal(0, exitCode);
         Assert.Equal("Text", Clipboard.GetText());
@@ -152,7 +154,8 @@ public class IntegrationTests : IDisposable
     [Fact]
     public void NoNewline_StripsWindowsNewline()
     {
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\r\n", args: "--no-newline");
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: "Text\r\n", args: "-i --no-newline");
 
         Assert.Equal(0, exitCode);
         Assert.Equal("Text", Clipboard.GetText());
@@ -172,7 +175,8 @@ public class IntegrationTests : IDisposable
     {
         var testText = $"Integration_{Guid.NewGuid()}";
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText);
+        // Use -i to force copy mode (test harness redirects both stdin and stdout)
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText, args: "-i");
 
         Assert.Equal(0, exitCode);
         Assert.Empty(stdout); // No output when setting clipboard
@@ -213,7 +217,8 @@ public class IntegrationTests : IDisposable
     {
         var testText = "Emoji test: 💪🎉✅🚀";
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText);
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText, args: "-i");
 
         Assert.Equal(0, exitCode);
 
@@ -226,7 +231,8 @@ public class IntegrationTests : IDisposable
     {
         var testText = "Line 1\nLine 2\nLine 3";
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText);
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText, args: "-i");
 
         Assert.Equal(0, exitCode);
 
@@ -239,7 +245,8 @@ public class IntegrationTests : IDisposable
     {
         var testText = "Special: `backticks` $dollars 'quotes' \"double\"";
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText);
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText, args: "-i");
 
         Assert.Equal(0, exitCode);
 
@@ -252,7 +259,8 @@ public class IntegrationTests : IDisposable
     {
         var testText = "Unicode: 中文 日本語 한국어 Русский العربية";
 
-        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText);
+        // Use -i to force copy mode
+        var (exitCode, stdout, stderr) = RunUtf8Clip(input: testText, args: "-i");
 
         Assert.Equal(0, exitCode);
 
