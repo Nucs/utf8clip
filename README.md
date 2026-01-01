@@ -45,13 +45,18 @@ cat file.txt | utf8clip
 utf8clip                    # Print to terminal
 utf8clip > output.txt       # Save to file
 
+# Explicit mode control (v2.1.0+)
+echo "text" | utf8clip -i   # Force copy mode (--input or -)
+utf8clip -o                 # Force paste mode (--output)
+utf8clip -o > file.txt      # Explicit paste to file
+
 # Options
 utf8clip --help             # or -h or -?
 utf8clip --version          # Shows version+commit (e.g., 2.1.0+abc1234)
 utf8clip --clear            # Clear clipboard
 echo "text" | utf8clip -n   # Strip trailing newlines (--no-newline)
 echo "more" | utf8clip -a   # Append to clipboard (--append)
-echo "text" | utf8clip -a -n  # Combine options
+echo "text" | utf8clip -i -a -n  # Combine options
 ```
 
 > **Note**: On Unix/macOS use `./utf8clip` if not in PATH. On Windows use `utf8clip.exe` or `.\utf8clip.exe` in PowerShell.
@@ -71,14 +76,18 @@ dotnet utf8clip.dll > output.txt
 ## Behavior
 
 **Mode detection** (in priority order):
-1. `--clear` flag → clears clipboard and exits
-2. Stdin redirected → **copy mode** (stdin → clipboard)
-3. Stdout redirected → **paste mode** (clipboard → file, UTF-8 no BOM)
-4. Neither redirected → **paste mode** (clipboard → terminal)
+1. Explicit `-i`/`-o` flag → use specified mode
+2. `--clear` flag → clears clipboard and exits
+3. Stdin redirected AND stdout NOT redirected → **copy mode** (stdin → clipboard)
+4. Otherwise → **paste mode** (clipboard → stdout, UTF-8 no BOM)
+
+> **Tip**: Use `-i` or `-o` when both stdin and stdout are redirected (common in CI, test harnesses, or `$(...)` captures).
+
+**Flag precedence**: `--clear` runs first and exits. For `-i`/`-o`, last flag wins. Options like `-a`, `-n` combine freely with `-i`.
 
 **Exit codes**: `0` success, `1` error (errors written to stderr)
 
-**Empty clipboard**: Returns empty string (no error)
+**Empty clipboard**: Outputs nothing (no error)
 
 ## Platform Requirements
 

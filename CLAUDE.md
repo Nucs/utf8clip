@@ -42,16 +42,20 @@ Internal classes:
 Mode detection (in priority order):
 1. `-h/--help/-?` or `-v/--version` → print and exit immediately
 2. `-c/--clear` → clear clipboard via `SetText(string.Empty)` and exit
-3. `stdin redirected` → **Copy mode**: reads stdin to clipboard
-4. `stdout redirected` → **Paste mode (file)**: writes clipboard to stdout with UTF-8 no BOM
-5. `neither redirected` → **Paste mode (terminal)**: temporarily sets `Console.OutputEncoding` to UTF-8
+3. Explicit `-i`/`-o` flag → use specified mode (overrides auto-detection)
+4. `stdin redirected AND stdout NOT redirected` → **Copy mode**: reads stdin to clipboard
+5. Otherwise → **Paste mode**: writes clipboard to stdout with UTF-8 no BOM
 
 Options:
+- `-i/--input/-`: Force copy mode (stdin → clipboard), useful when both streams redirected
+- `-o/--output`: Force paste mode (clipboard → stdout), useful when both streams redirected
 - `-a/--append`: In copy mode, prepends existing clipboard content to new input
 - `-c/--clear`: Clears clipboard contents
 - `-n/--no-newline`: Strips trailing `\r` and `\n` from input via `TrimEnd('\r', '\n')`
 - `-v/--version`: Prints `AssemblyInformationalVersionAttribute` (format: `version+commit`)
 - `-h/--help/-?`: Prints usage including current platform backend name
+
+Flag precedence: `--clear` runs first. For `-i`/`-o`, last flag wins.
 
 Exit codes: `0` success, `1` error. Errors written to stderr as `Error: {message}`.
 
@@ -69,6 +73,7 @@ Test files in `tests/` using xUnit:
 - **UnicodeTests.cs**: Emoji, CJK, RTL scripts, supplementary plane chars
 - **EdgeCaseTests.cs**: Large text (1MB), embedded nulls, control chars, normalization
 - **IntegrationTests.cs**: End-to-end binary execution tests
+- **ModeTests.cs**: Explicit mode flags (-i/-o), flag combinations, roundtrip tests
 
 Notes:
 - Tests interact with real system clipboard
